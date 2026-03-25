@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+      }
+
+      .button {
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-left: 12px;
+        margin-top: 12px;
+      }
+
+      .button.primary {
+        background-color: #007bff;
+        color: white;
+        margin-top: 12px;
+      }
+
+      .error {
+        color: red;
+        margin-bottom: 10px;
+      }
+
+      .user-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .user-card {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0px 2px 4px black;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      #userModal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        padding-top: 60px;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: auto;
+        padding: 20px;
+        border-radius: 5px;
+        width: 400px;
+        margin-top: 90px;
+      }
+
+      .close {
+        color: black;
+        float: right;
+        font-size: 28px;
+        cursor: pointer;
+      }
+
+      .close:hover {
+        color: red;
+      }
+
+      .cd {
+        width: 300px;
+      }
+
+      input {
+        margin: 12px;
+      }
+      :focus {
+        background-color: gainsboro;
+      }
+
+      @media screen and (max-width: 550px) {
+        .modal-content {
+          width: 200px;
+          margin-top: 85px;
+        }
+        .container {
+          margin-top: -30px;
+        }
+        .container h1 {
+          font-size: x-large;
+        }
+        #modalTitle {
+          font-size: larger;
+        }
+      }
+
+      @media screen and (min-width:0px) and (max-width: 376px) {
+        .user-card {
+          width: 240px;
+          margin-right: 4px;
+        }
+        
+        .cd {
+          width: 170px;
+          font-size: small;
+          word-wrap: break-word;
+        }
+        .button {
+          padding: 7px;
+        }
+        .btn-cd {
+          display: grid;
+          height: 12px;
+        }
+      }
+
+      @media screen and (min-width: 376px) and (max-width: 460px) {
+        .user-card {
+          width: 350px;
+        }
+        .cd {
+          width: 260px;
+          word-wrap: break-word;
+        }
+        .btn-cd {
+          display: grid;
+          height: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>User Management Dashboard</h1>
+      <button
+        id="addUserButton"
+        class="button primary"
+        style="margin-left: 1px"
+      >
+        Add User
+      </button>
+      <div id="errorMessage" class="error"></div>
+      <div id="userList" class="user-list"></div>
+    </div>
+
+    <!-- User Form Modal -->
+    <div id="userModal" class="modal">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2 id="modalTitle">Add User</h2>
+        <form id="userForm">
+          <input type="text" id="firstName" placeholder="First Name" required />
+          <input type="text" id="lastName" placeholder="Last Name" required />
+          <input type="email" id="email" placeholder="Email" required />
+          <input
+            type="text"
+            id="department"
+            placeholder="Department"
+            required
+          />
+          <button type="submit" id="save" class="button primary">Save</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      const API_URL = "https://jsonplaceholder.typicode.com/users"; //Mock API Endpoint
+      const userList = document.getElementById("userList");
+      const errorMessage = document.getElementById("errorMessage");
+      const userModal = document.getElementById("userModal");
+      const closeModal = document.getElementById("closeModal");
+      const userForm = document.getElementById("userForm");
+      const modalTitle = document.getElementById("modalTitle");
+      const addUserButton = document.getElementById("addUserButton");
+
+      let users = []; //Store users
+      let editingUser = null; //Track user being edited
+
+      //Fetch users from the API
+      const fetchUsers = async () => {
+        try {
+          const response = await fetch(API_URL);
+          users = await response.json();
+          displayUsers();
+        } catch {
+          showError(`Failed to fetch users.`);
+        }
+      };
+
+      //Display users on the page
+      const displayUsers = () => {
+        userList.innerHTML = "";
+        users.forEach((user) => {
+          const userCard = document.createElement("div");
+          userCard.className = "user-card";
+          userCard.innerHTML = `
+    
+      <div class="cd">
+        <p><strong>ID:</strong> ${user.id}</p>
+        <p><strong>First Name:</strong> ${user.name || "N/A"}</p>
+        <p><strong>Last Name:</strong> ${user.username || "N/A"}</p>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Department:</strong> ${user.website || "N/A"}</p>
+      </div>
+      <div class = "btn-cd">
+        <button class="button primary" onclick="editUser(${
+          user.id
+        })">Edit</button>
+        <button class="button" onclick="deleteUser(${user.id})">Delete</button>
+      </div>
+      </div>
+    `;
+          userList.appendChild(userCard);
+        });
+      };
+
+      //Show error message
+      const showError = (message) => {
+        errorMessage.textContent = message;
+      };
+
+      //Reset form and modal
+      const resetForm = () => {
+        userForm.reset();
+        editingUser = null;
+      };
+
+      //Open modal for adding a user
+      addUserButton.addEventListener("click", () => {
+        modalTitle.textContent = "Add User";
+        resetForm();
+        userModal.style.display = "block";
+      });
+
+      //Close modal
+      closeModal.addEventListener("click", () => {
+        userModal.style.display = "none";
+      });
+
+      //Handle form submission for add/edit user
+      userForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = {
+          name: document.getElementById("firstName").value,
+          username: document.getElementById("lastName").value,
+          email: document.getElementById("email").value,
+          website: document.getElementById("department").value,
+        };
+
+        try {
+          if (editingUser) {
+            await fetch(`${API_URL}/${editingUser.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            });
+            debugger;
+            users = users.map((user) => {
+              const updatedUser =
+                user.id === editingUser.id ? { ...user, ...formData } : user;
+              debugger;
+              console.log("Updated user:", updatedUser); // Log the updated user data
+              return updatedUser;
+            });
+            debugger;
+          } else {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            });
+            const newUser = await response.json();
+            const lastId = users[users.length - 1].id;
+            users.push({ ...formData, id: lastId + 1 });
+          }
+          displayUsers();
+          userModal.style.display = "none";
+        } catch {
+          showError("Failed to save user.");
+        }
+      });
+
+      //Edit user
+      const editUser = (id) => {
+        const user = users.find((u) => u.id === id);
+        if (user) {
+          editingUser = user;
+          document.getElementById("firstName").value = user.name || "";
+          document.getElementById("lastName").value = user.username || "";
+          document.getElementById("email").value = user.email;
+          document.getElementById("department").value = user.website || "";
+          modalTitle.textContent = "Edit User";
+          userModal.style.display = "block";
+        }
+      };
+
+      //Delete user
+      const deleteUser = async (id) => {
+        try {
+          await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+          users = users.filter((user) => user.id !== id);
+          displayUsers();
+        } catch {
+          showError("Failed to delete user.");
+        }
+      };
+
+      //Fetch users on page load
+      window.onload = fetchUsers;
+    </script>
+  </body>
+</html>
